@@ -1,0 +1,23 @@
+.header {
+    display: flex;
+    flex-direction: row;
+    width: 100vw;
+    align-items: center;
+}
+
+ul > li {
+    list-style: none;
+}
+
+.links {
+    display: flex;
+    flex-direction: row;
+    gap: 50px;
+    margin-left: auto;
+    margin-right: 100px;
+}
+
+.link {
+    text-decoration: none;
+    margin-left: auto;
+}
