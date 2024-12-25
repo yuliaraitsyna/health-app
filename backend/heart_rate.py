@@ -8,9 +8,6 @@ def calclulate_avg_heart_rate(rates):
     return rates['value'].astype(float).mean()
 
 def determine_stress_state(score):
-    """
-    Categorize stress based on a combined score.
-    """
     if score > 80:
         return "Bad"
     elif 60 < score <= 80:
@@ -23,16 +20,16 @@ def determine_stress_state(score):
         return "Perfect"
 
 def calculate_stress_level(df, rhr):
-
     if 'value' not in df.columns:
         raise ValueError("Missing 'value' column in the input data.")
     
     df['value'] = df['value'].astype(float)
     
-    df['deviation'] = ((df['value'] - rhr) / rhr) * 100
-    
+    df['deviation'] = (abs(df['value'] - rhr) / rhr) * 100
     df['stress_state'] = df['deviation'].apply(determine_stress_state)
     return df
+
+
 
 def calculate_recovery(hrv, rhr_current, rhr_baseline, hr_max, hr_1min, age):
     hrv_weight = 0.7

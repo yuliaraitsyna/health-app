@@ -1,13 +1,8 @@
-import pytz
 from heart_rate import calculate_recovery, calculate_stress_level, filter_heart_data_by_period
 from heart_rate import calclulate_avg_heart_rate
 from data_reader import get_heart_data, get_hr_1min, get_hr_max, get_rhr_baseline, get_rhr_current, parse_data, get_hrv
 from datetime import datetime, timedelta, timezone
 import pandas as pd
-
-
-health_data = parse_data("backend/export.xml")
-heart_data = get_heart_data(health_data)
 
 # utc_plus_3 = timezone(timedelta(hours=3))
 

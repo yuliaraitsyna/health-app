@@ -3,6 +3,7 @@ import { Slider } from "../Slider/Slider";
 import { slides } from "../Slider/mock/mock";
 import styles from "./Main.module.css";
 
+
 const Main = () => {
     return (
         <body className={styles.main}>
