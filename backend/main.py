@@ -1,4 +1,4 @@
-from data_reader import parse_data
+from backend.data_reader import parse_data
 import pandas as pd
 
 health_data = parse_data("./export.xml")

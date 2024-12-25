@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom"
 import styles from "./Header.module.css"
 import { Typography } from "@mui/material"
+import icon from "/heart.png"
 
 const Header = () => {
     return (
         <header className={styles['header']}>
+            <img src={icon} className={styles['icon']}></img>
             <Typography variant="h4">Health App</Typography>
             <ul className={styles['links']}>
                 <li>
