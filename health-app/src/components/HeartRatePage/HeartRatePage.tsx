@@ -13,14 +13,22 @@ const HeartRatePage = () => {
 
   const fetchHeartData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/heart_rate");
+      const response = await fetch("http://192.168.0.161:8000/heart_rate");
       if (!response.ok) {
         throw new Error("Failed to fetch heart data");
       }
       const data = await response.json();
 
       if (data && Array.isArray(data.heart_data)) {
-        setHeartData(data.heart_data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const formattedData: HeartData[] = data.heart_data.map((item: any) => ({
+            startDate: new Date(item.start_date),
+            endDate: new Date(item.end_date),
+            value: item.value,
+        }));
+
+        setHeartData(formattedData);
+        
       } else {
         console.error("Heart data is not in the expected format");
       }

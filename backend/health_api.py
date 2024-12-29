@@ -8,7 +8,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,6 +40,7 @@ def get_heart_data_query(
 ):
     
     heart_data = get_heart_data(health_data)
+    records_number = int(heart_data.shape[0] / 100)
 
     if(start_date and end_date):
         utc_plus_3 = timezone(timedelta(hours=3))
@@ -49,4 +50,7 @@ def get_heart_data_query(
 
         heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
     
-    return {"heart_data": transform_data(heart_data[:100])}
+    transformed_data = transform_data(heart_data[::records_number][['start_date', 'end_date', 'value']])
+
+    
+    return {"heart_data": transformed_data}
