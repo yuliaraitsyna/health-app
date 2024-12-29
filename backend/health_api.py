@@ -40,7 +40,6 @@ def get_heart_data_query(
 ):
     
     heart_data = get_heart_data(health_data)
-    records_number = int(heart_data.shape[0] / 100)
 
     if(start_date and end_date):
         utc_plus_3 = timezone(timedelta(hours=3))
@@ -49,7 +48,16 @@ def get_heart_data_query(
         end_date = end_date.astimezone(utc_plus_3) if end_date.tzinfo is None else end_date
 
         heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
-    
+        
+    print(heart_data.shape[0])
+
+    if(heart_data.shape[0] > 1000 & heart_data.shape[0] < 5000):
+        records_number = int(heart_data.shape[0] / 100)
+    elif(heart_data.shape[0] > 5000):
+        records_number = int(heart_data.shape[0] / 1000)
+    else:
+        records_number = 1
+
     transformed_data = transform_data(heart_data[::records_number][['start_date', 'end_date', 'value']])
 
     

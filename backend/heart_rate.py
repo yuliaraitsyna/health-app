@@ -1,6 +1,7 @@
+from datetime import datetime
 import pandas as pd
 
-def filter_heart_data_by_period(start_date, end_date, rates):
+def filter_heart_data_by_period(start_date: datetime, end_date: datetime, rates):
     df = pd.DataFrame(rates)
     return df[(df['start_date'] >= start_date) & (df['end_date'] <= end_date)]
 
