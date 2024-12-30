@@ -7,7 +7,7 @@ import { Period } from "../DatePicker/Period";
 import { AvgHeartRate } from "./AvgHeartRate/AvgHeartRate";
 
 import styles from './HeartRatePage.module.css'
-import { StressChart } from "./Charts/StressChart/StressChart";
+import { StressChart, StressStateChart } from "./Charts/StressChart/StressChart";
 
 const LOCAL_STORAGE_KEY = "selectedPeriod";
 
@@ -107,6 +107,7 @@ const HeartRatePage = () => {
             <DatePickerComponent onDateSent={handleDateSent} initialPeriod={period} />
             <HRChart data={deferredValue} />
             <StressChart data={deferredStressData}/>
+            <StressStateChart data={deferredStressData}/>
         </div>
     );
 };

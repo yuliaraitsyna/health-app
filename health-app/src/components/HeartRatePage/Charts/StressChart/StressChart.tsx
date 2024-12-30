@@ -11,7 +11,6 @@ const StressChart: React.FC<{data: StressData[]}> = ({ data }) => {
     const chartInstanceRef = useRef<Chart | null>(null);
 
     useEffect(() => {
-        console.log(data)
         if(!chartRef.current) return;
 
         if(chartInstanceRef.current) {
@@ -50,7 +49,63 @@ const StressChart: React.FC<{data: StressData[]}> = ({ data }) => {
 
     }, [data]);
 
-    return <canvas ref={chartRef} id="heartRateChart" className={styles['chart']}></canvas>
+    return <canvas ref={chartRef} id="stressChart" className={styles['chart']}></canvas>
 }
 
-export { StressChart }
+const StressStateChart: React.FC<{data: StressData[]}> = ({ data }) => {
+    const chartRef = useRef<HTMLCanvasElement>(null);
+    const chartInstanceRef = useRef<Chart | null>(null);
+
+    useEffect(() => {
+        if(!chartRef.current) return;
+
+        if(chartInstanceRef.current) {
+            chartInstanceRef.current.destroy();
+        }
+
+        const labels = ['Bad', 'Warning', 'Normal', 'Good', 'Perfect'];
+        const stateCounts = labels.map((label) =>
+            data.filter((item) => item.stressState === label).length
+        );
+
+        const colors = [
+            'rgba(255, 99, 132, 0.6)',
+            'rgba(255, 159, 64, 0.6)',
+            'rgba(255, 205, 86, 0.6)',
+            'rgba(75, 192, 192, 0.6)',
+            'rgba(54, 162, 235, 0.6)',
+        ];
+
+        const chartData: ChartData<"bar"> = {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Stress state",
+                    data: stateCounts,
+                    backgroundColor: colors,
+                },
+            ],
+        };
+
+        const config: ChartConfiguration = {
+            type: "bar",
+            data: chartData,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Stress state statistics'
+                    },
+                },
+            },
+        };
+
+        chartInstanceRef.current =  new Chart(chartRef.current, config);
+
+    }, [data]);
+
+    return <canvas ref={chartRef} id="stressStateChart" className={styles['chart']}></canvas>
+}
+
+export { StressChart, StressStateChart }

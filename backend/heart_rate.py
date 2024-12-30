@@ -30,8 +30,6 @@ def calculate_stress_level(df, rhr):
     df['stress_state'] = df['deviation'].apply(determine_stress_state)
     return df
 
-
-
 def calculate_recovery(hrv, rhr_current, rhr_baseline, hr_max, hr_1min, age):
     hrv_weight = 0.7
     rhr_deviation_weight = 0.1
