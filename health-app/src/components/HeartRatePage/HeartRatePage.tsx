@@ -29,8 +29,6 @@ const HeartRatePage = () => {
         } else {
             fetchHeartData();
         }
-
-        return () => localStorage.removeItem(LOCAL_STORAGE_KEY)
     }, []);
 
     useEffect(() => {

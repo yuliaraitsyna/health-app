@@ -16,6 +16,11 @@ const DatePickerComponent: React.FC<DatePickerComponentProps> = ({ onDateSent, i
   const [endDate, setEndDate] = useState<Date | null>(initialPeriod.endDate);
 
   useEffect(() => {
+    setStartDate(initialPeriod.startDate);
+    setEndDate(initialPeriod.endDate);
+  }, [initialPeriod]);
+  
+  useEffect(() => {
     if (startDate && endDate) {
       const period: Period = { startDate, endDate };
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(period));
