@@ -17,6 +17,7 @@ const HeartRatePage = () => {
     const [heartData, setHeartData] = useState<HeartData[]>([]);
     const deferredValue = useDeferredValue(heartData);
     const [period, setPeriod] = useState<Period>({ startDate: null, endDate: null });
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
         const storedPeriod = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -54,6 +55,7 @@ const HeartRatePage = () => {
 
             const response = await fetch(url);
             if (!response.ok) {
+                setErrorMessage("Response was not ok. Please, try again.");
                 throw new Error("Failed to fetch heart data");
             }
 
@@ -68,9 +70,11 @@ const HeartRatePage = () => {
 
                 setHeartData(formattedData);
             } else {
+                setErrorMessage("Something went wrong. Please, try again.");
                 console.error("Heart data is not in the expected format");
             }
         } catch (error) {
+            setErrorMessage("Error fetching heart data. Please, try again.");
             console.error("Error fetching heart data:", error);
         }
     };
@@ -78,6 +82,7 @@ const HeartRatePage = () => {
     return (
         <>
             <Typography variant="h3">Heart rate data</Typography>
+            {errorMessage ? <Typography variant="body1" color="red">{errorMessage}</Typography> : null}
             <DatePickerComponent onDateSent={handleDateSent} initialPeriod={period} />
             <HRChart data={deferredValue} />
         </>
