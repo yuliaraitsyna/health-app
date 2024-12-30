@@ -48,8 +48,6 @@ def get_heart_data_query(
         end_date = end_date.astimezone(utc_plus_3) if end_date.tzinfo is None else end_date
 
         heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
-        
-    print(heart_data.shape[0])
 
     if(heart_data.shape[0] > 1000 & heart_data.shape[0] < 5000):
         records_number = int(heart_data.shape[0] / 100)

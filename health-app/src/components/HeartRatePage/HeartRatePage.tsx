@@ -1,26 +1,46 @@
-import { useEffect, useState } from "react";
-import { Typography, CircularProgress } from "@mui/material";
+import { useCallback, useDeferredValue, useEffect, useState } from "react";
+import { Typography } from "@mui/material";
 import { HRChart } from "./HRChart/HRChart";
 import { HeartData } from "../HeartData/HeartData";
 import { DatePickerComponent } from "../DatePicker/DatePicker";
 import { Period } from "../DatePicker/Period";
 
+const LOCAL_STORAGE_KEY = "selectedPeriod";
+
+interface HeartDataItem {
+    start_date: string;
+    end_date: string;
+    value: number;
+}
+
 const HeartRatePage = () => {
     const [heartData, setHeartData] = useState<HeartData[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [period, setPeriod] = useState<Period | null>(null);
+    const deferredValue = useDeferredValue(heartData);
+    const [period, setPeriod] = useState<Period>({ startDate: null, endDate: null });
 
     useEffect(() => {
-        if (period) {
-            fetchHeartData(period.startDate, period.endDate);
+        const storedPeriod = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (storedPeriod) {
+            const parsedPeriod = JSON.parse(storedPeriod);
+            const start = parsedPeriod.startDate ? new Date(parsedPeriod.startDate) : null;
+            const end = parsedPeriod.endDate ? new Date(parsedPeriod.endDate) : null;
+            setPeriod({ startDate: start, endDate: end });
         } else {
             fetchHeartData();
         }
+
+        return () => localStorage.removeItem(LOCAL_STORAGE_KEY)
+    }, []);
+
+    useEffect(() => {
+        if (period.startDate && period.endDate) {
+            fetchHeartData(period.startDate, period.endDate);
+        }
     }, [period]);
 
-    const handleDateChoice = (date: Period) => {
+    const handleDateSent = useCallback((date: Period) => {
         setPeriod(date);
-    }
+    }, []);
 
     const fetchHeartData = async (startDate?: Date | null, endDate?: Date | null) => {
         try {
@@ -40,31 +60,26 @@ const HeartRatePage = () => {
             const data = await response.json();
 
             if (data && Array.isArray(data.heart_data)) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const formattedData: HeartData[] = data.heart_data.map((item: any) => ({
+                const formattedData: HeartData[] = data.heart_data.map((item: HeartDataItem) => ({
                     startDate: new Date(item.start_date),
                     endDate: new Date(item.end_date),
                     value: item.value,
                 }));
 
                 setHeartData(formattedData);
-
             } else {
                 console.error("Heart data is not in the expected format");
             }
-
         } catch (error) {
             console.error("Error fetching heart data:", error);
-        } finally {
-            setLoading(false);
         }
     };
 
     return (
         <>
             <Typography variant="h3">Heart rate data</Typography>
-            <DatePickerComponent onDateSent={handleDateChoice}></DatePickerComponent>
-            {loading ? <CircularProgress /> : <HRChart data={heartData} />}
+            <DatePickerComponent onDateSent={handleDateSent} initialPeriod={period} />
+            <HRChart data={deferredValue} />
         </>
     );
 };
