@@ -1,21 +1,27 @@
 import { useCallback, useDeferredValue, useEffect, useState } from "react";
 import { Typography } from "@mui/material";
-import { HRChart } from "./HRChart/HRChart";
-import { HeartData } from "../HeartData/HeartData";
+import { HRChart } from "./Charts/HRChart/HRChart";
+import { HeartData, StressData } from "../HeartData/HeartData";
 import { DatePickerComponent } from "../DatePicker/DatePicker";
 import { Period } from "../DatePicker/Period";
+import { AvgHeartRate } from "./AvgHeartRate/AvgHeartRate";
+
+import styles from './HeartRatePage.module.css'
+import { StressChart } from "./Charts/StressChart/StressChart";
 
 const LOCAL_STORAGE_KEY = "selectedPeriod";
 
-interface HeartDataItem {
-    start_date: string;
-    end_date: string;
-    value: number;
+enum FetchType {
+    HEART = '/heart_rate',
+    STRESS = '/heart_rate/stress'
 }
 
 const HeartRatePage = () => {
     const [heartData, setHeartData] = useState<HeartData[]>([]);
+    const [stressData, setStressData] = useState<StressData[]>([]);
+    const [avgHR, setAvgHR] = useState<number>(0);
     const deferredValue = useDeferredValue(heartData);
+    const deferredStressData = useDeferredValue(stressData);
     const [period, setPeriod] = useState<Period>({ startDate: null, endDate: null });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -27,13 +33,15 @@ const HeartRatePage = () => {
             const end = parsedPeriod.endDate ? new Date(parsedPeriod.endDate) : null;
             setPeriod({ startDate: start, endDate: end });
         } else {
-            fetchHeartData();
+            fetchData(FetchType.HEART);
+            fetchData(FetchType.STRESS);
         }
     }, []);
 
     useEffect(() => {
         if (period.startDate && period.endDate) {
-            fetchHeartData(period.startDate, period.endDate);
+            fetchData(FetchType.STRESS, period.startDate, period.endDate);
+            fetchData(FetchType.HEART, period.startDate, period.endDate);
         }
     }, [period]);
 
@@ -41,9 +49,9 @@ const HeartRatePage = () => {
         setPeriod(date);
     }, []);
 
-    const fetchHeartData = async (startDate?: Date | null, endDate?: Date | null) => {
+    const fetchData = async (fetchType: FetchType, startDate?: Date | null, endDate?: Date | null) => {
         try {
-            let url = "http://192.168.0.161:8000/heart_rate";
+            let url: string = `http://192.168.0.161:8000${fetchType}`;
 
             if (startDate && endDate) {
                 const start = startDate.toISOString();
@@ -53,37 +61,53 @@ const HeartRatePage = () => {
 
             const response = await fetch(url);
             if (!response.ok) {
-                setErrorMessage("Response was not ok. Please, try again.");
-                throw new Error("Failed to fetch heart data");
+                setErrorMessage(`Failed to fetch ${fetchType} data. Please, try again.`);
+                throw new Error(`Failed to fetch ${fetchType} data`);
             }
 
             const data = await response.json();
 
-            if (data && Array.isArray(data.heart_data)) {
-                const formattedData: HeartData[] = data.heart_data.map((item: HeartDataItem) => ({
-                    startDate: new Date(item.start_date),
-                    endDate: new Date(item.end_date),
-                    value: item.value,
-                }));
-
-                setHeartData(formattedData);
-            } else {
-                setErrorMessage("Something went wrong. Please, try again.");
-                console.error("Heart data is not in the expected format");
+            if (fetchType === FetchType.HEART) {
+                if (data && Array.isArray(data.heart_data)) {
+                    const formattedData: HeartData[] = data.heart_data.map(
+                        (item: HeartData, index: number) => ({
+                            startDate: new Date(item.startDate),
+                            endDate: new Date(item.endDate),
+                            value: item.value,
+                            deviation: data.stress_data ? data.stress_data[index]?.deviation || 0 : 0,
+                        })
+                    );
+                    setHeartData(formattedData);
+                }
+                if (data.avg_heart_rate) {
+                    setAvgHR(Math.round(data.avg_heart_rate));
+                }
+            } else if (fetchType === FetchType.STRESS) {
+                if (data && Array.isArray(data.stress_data)) {
+                    const formattedStressData: StressData[] = data.stress_data.map((item: StressData) => ({
+                        startDate: new Date(item.startDate),
+                        value: item.value,
+                        deviation: item.deviation,
+                        stressState: item.stressState,
+                    }));
+                    setStressData(formattedStressData);
+                }
             }
         } catch (error) {
-            setErrorMessage("Error fetching heart data. Please, try again.");
-            console.error("Error fetching heart data:", error);
+            setErrorMessage("An error occurred while fetching data. Please, try again.");
+            console.error(`Error fetching ${fetchType} data:`, error);
         }
     };
 
     return (
-        <>
-            <Typography variant="h3">Heart rate data</Typography>
+        <div className={styles['page']}>
+            <Typography variant="h3" m={"10px"}>Heart rate data</Typography>
+            <AvgHeartRate heartRate={avgHR}></AvgHeartRate>
             {errorMessage ? <Typography variant="body1" color="red">{errorMessage}</Typography> : null}
             <DatePickerComponent onDateSent={handleDateSent} initialPeriod={period} />
             <HRChart data={deferredValue} />
-        </>
+            <StressChart data={deferredStressData}/>
+        </div>
     );
 };
 

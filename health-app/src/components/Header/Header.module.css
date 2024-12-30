@@ -3,6 +3,7 @@
     flex-direction: row;
     width: 100vw;
     align-items: center;
+    box-shadow: 15px 0 15px lightblue;
 }
 
 ul > li {

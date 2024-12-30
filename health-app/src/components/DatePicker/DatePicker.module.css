@@ -1,0 +1,10 @@
+.date-pickers {
+    display: flex;
+    flex-direction: row;
+    gap: 40px;
+}
+
+.date-picker {
+    width: 200px;
+    box-shadow: 1px 0 15px lightblue;
+}

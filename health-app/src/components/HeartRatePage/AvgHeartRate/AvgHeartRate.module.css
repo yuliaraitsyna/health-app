@@ -1,0 +1,21 @@
+.avg-hr-card {
+    width: 350px;
+    height: 200px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    gap: 10px;
+}
+
+.avg-hr-card > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.avg-hr-card > div > img {
+    width: 30%;
+}

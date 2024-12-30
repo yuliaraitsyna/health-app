@@ -4,6 +4,8 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useEffect, useState } from "react";
 import { Period } from "./Period";
 
+import styles from './DatePicker.module.css'
+
 interface DatePickerComponentProps {
   onDateSent: (date: Period) => void;
   initialPeriod: Period;
@@ -29,18 +31,22 @@ const DatePickerComponent: React.FC<DatePickerComponentProps> = ({ onDateSent, i
   }, [startDate, endDate, onDateSent]);
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <DatePicker
-        label="Start Date"
-        value={startDate}
-        onChange={(date) => setStartDate(date)}
-      />
-      <DatePicker
-        label="End Date"
-        value={endDate}
-        onChange={(date) => setEndDate(date)}
-      />
-    </LocalizationProvider>
+    <div className={styles['date-pickers']}>
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+                label="Start Date"
+                value={startDate}
+                onChange={(date) => setStartDate(date)}
+                className={styles['date-picker']}
+            />
+            <DatePicker
+                label="End Date"
+                value={endDate}
+                onChange={(date) => setEndDate(date)}
+                className={styles['date-picker']}
+            />
+        </LocalizationProvider>
+    </div>
   );
 };
 

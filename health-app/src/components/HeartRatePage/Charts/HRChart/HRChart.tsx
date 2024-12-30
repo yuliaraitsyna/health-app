@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import { HeartData } from "../../HeartData/HeartData";
+import { HeartData } from "../../../HeartData/HeartData";
 import { Chart, ChartConfiguration, ChartData, registerables } from "chart.js";
+
+import styles from '../Chart.module.css'
 
 Chart.register(...registerables);
 
@@ -45,7 +47,7 @@ const HRChart: React.FC<{ data: HeartData[] }> = ({ data }) => {
     chartInstanceRef.current = new Chart(chartRef.current, config);
   }, [data]);
 
-  return <canvas ref={chartRef} id="heartRateChart"></canvas>;
+  return <canvas ref={chartRef} id="heartRateChart" className={styles['chart']}></canvas>;
 };
 
 export { HRChart };
