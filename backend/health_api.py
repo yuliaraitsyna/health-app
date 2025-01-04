@@ -1,12 +1,11 @@
 from datetime import datetime, timedelta, timezone
-from typing import List, Union
 from fastapi import FastAPI, HTTPException, Query
-from backend.data_reader import get_hrv, parse_data, get_heart_data
+from backend.data_reader import parse_data, get_heart_data
 from backend.heart_rate import calclulate_avg_heart_rate, calculate_stress_level, filter_heart_data_by_period
 from fastapi.middleware.cors import CORSMiddleware
-from dataclasses import dataclass
-from datetime import date
 import pandas as pd
+
+UTC_PLUS_3 = timezone(timedelta(hours=3))
 
 app = FastAPI()
 
@@ -20,6 +19,29 @@ app.add_middleware(
 )
 
 health_data = parse_data("backend/export.xml")
+
+def validate_and_adjust_dates(start_date, end_date):
+    if start_date > end_date:
+        raise HTTPException(
+            status_code=400,
+            detail='invalid date or period format'
+        )
+    
+    start_date = start_date.astimezone(UTC_PLUS_3) if start_date.tzinfo is None else start_date
+    end_date = end_date.astimezone(UTC_PLUS_3) if end_date.tzinfo is None else end_date
+    
+    return start_date, end_date
+
+def calculate_records_number(data_size):
+    if data_size <= 1000:
+        return 1
+    elif data_size <= 10000:
+        return max(1, data_size // 1000)  
+    elif data_size <= 50000:
+        return max(100, data_size // 200)
+    else:
+        return max(500, data_size // 100)
+
 
 def modify_response_data(data):
     if isinstance(data, dict):
@@ -68,29 +90,17 @@ def get_heart_data_query(
     end_date: datetime = Query(None, description="End date")
 ):
     
-    if start_date and end_date and start_date > end_date:
-        raise HTTPException (
-            status_code=400,
-            detail="End date can't be earlier than start date"
-        )
-    
-    try:  
+    try:
         heart_data = get_heart_data(health_data)
-
-        if(start_date and end_date):
-            utc_plus_3 = timezone(timedelta(hours=3))
-
-            start_date = start_date.astimezone(utc_plus_3) if start_date.tzinfo is None else start_date
-            end_date = end_date.astimezone(utc_plus_3) if end_date.tzinfo is None else end_date
-
+        
+        if start_date and end_date:
+            start_date, end_date = validate_and_adjust_dates(start_date, end_date)
             heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
-
-        if(heart_data.shape[0] > 1000 & heart_data.shape[0] < 5000):
-            records_number = int(heart_data.shape[0] / 100)
-        elif(heart_data.shape[0] > 5000):
-            records_number = int(heart_data.shape[0] / 1000)
-        else:
-            records_number = 1
+        
+        data_size = heart_data.shape[0]
+        print(data_size)
+        records_number = calculate_records_number(data_size)
+        print(records_number)
 
         filtered_heart_data = heart_data[::records_number][['start_date', 'end_date', 'value']]
         transformed_data = modify_response_data(filtered_heart_data)
@@ -124,30 +134,27 @@ def get_stress_data(
 
     try:
         heart_data = get_heart_data(health_data)
-
+        
         if start_date and end_date:
-            utc_plus_3 = timezone(timedelta(hours=3))
-
-            start_date = start_date.astimezone(utc_plus_3) if start_date.tzinfo is None else start_date
-            end_date = end_date.astimezone(utc_plus_3) if end_date.tzinfo is None else end_date
-
+            start_date, end_date = validate_and_adjust_dates(start_date, end_date)
             heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
 
         avg_heart_rate = calclulate_avg_heart_rate(heart_data)
         stress_levels = calculate_stress_level(heart_data, avg_heart_rate)
         
-        if(heart_data.shape[0] > 1000 & heart_data.shape[0] < 5000):
-            records_number = int(heart_data.shape[0] / 100)
-        elif(heart_data.shape[0] > 5000):
-            records_number = int(heart_data.shape[0] / 1000)
-        else:
-            records_number = 1
+        data_size = heart_data.shape[0]
+        records_number = calculate_records_number(data_size)
 
         stress_levels = stress_levels[::records_number]
         
         stress_data = modify_response_data(stress_levels[['start_date', 'value', 'deviation', 'stress_state']])
         
         return {"stress_data": stress_data}
+    except TypeError as te:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Error occured: {str(te)}"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
