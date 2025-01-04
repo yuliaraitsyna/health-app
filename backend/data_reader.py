@@ -45,7 +45,6 @@ def get_hrv(data):
 
     hrv_data = df[df['type'] == 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN']
 
-    # Print and verify HRV data
     print(hrv_data)
     return hrv_data['value'].astype(float).mean()
 

@@ -51,7 +51,7 @@ const HeartRatePage = () => {
 
     const fetchData = async (fetchType: FetchType, startDate?: Date | null, endDate?: Date | null) => {
         try {
-            let url: string = `http://192.168.0.161:8000${fetchType}`;
+            let url: string = `http://localhost:8000${fetchType}`;
 
             if (startDate && endDate) {
                 const start = startDate.toISOString();
@@ -59,7 +59,15 @@ const HeartRatePage = () => {
                 url += `?start_date=${encodeURIComponent(start)}&end_date=${encodeURIComponent(end)}`;
             }
 
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                mode: 'cors',  // Ensure CORS mode is enabled
+                credentials: 'include', // If using cookies for auth
+              });
+
             if (!response.ok) {
                 setErrorMessage(`Failed to fetch ${fetchType} data. Please, try again.`);
                 throw new Error(`Failed to fetch ${fetchType} data`);

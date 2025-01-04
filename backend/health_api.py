@@ -1,60 +1,67 @@
 from datetime import datetime, timedelta, timezone
+from typing import List, Union
 from fastapi import FastAPI, HTTPException, Query
 from backend.data_reader import get_hrv, parse_data, get_heart_data
 from backend.heart_rate import calclulate_avg_heart_rate, calculate_stress_level, filter_heart_data_by_period
 from fastapi.middleware.cors import CORSMiddleware
-from typing import TypedDict, List, Optional
+from dataclasses import dataclass
 from datetime import date
+import pandas as pd
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    
 )
 
 health_data = parse_data("backend/export.xml")
 
-def transform_data(data):
+def modify_response_data(data):
     if isinstance(data, dict):
-        import pandas as pd
         data = pd.DataFrame(data)
-
-    transformed = []
-
-    for _, row in data.iterrows():
-        record = {
-            "startDate": row.get("start_date", None),
-            "endDate": row.get("end_date", None),
-            "value": row.get("value", None),
-        }
-        transformed.append(record)
-
-    return transformed
-
-def transform_stress_data(data):
-    if isinstance(data, dict):
-        import pandas as pd
-        data = pd.DataFrame(data)
-
-    transformed = []
-
-    for _, row in data.iterrows():
-        print(row)
-        record = {
-            "startDate": row.get("start_date", None),
-            "endDate": row.get("end_date", None),
-            "value": row.get("value", None),
-            "deviation": row.get("deviation", None),
-            "stressState": row.get("stress_state", None)
-        }
-        transformed.append(record)
-
-    return transformed
-
+        
+    data_columns = data.columns
+    
+    print(data_columns)
+    
+    if isinstance(data, pd.DataFrame):
+        required_columns_heart = {'start_date', 'end_date', 'value'}
+        required_columns_stress = {'start_date', 'value', 'deviation', 'stress_state'}
+    
+        if required_columns_heart.issubset(data_columns):
+            transformed = data[['start_date', 'end_date', 'value']].rename(
+                columns={
+                    'start_date': 'startDate',
+                    'end_date': 'endDate',
+                    'value': 'value'
+                }
+            ).to_dict(orient="records")
+            return transformed
+        
+        elif required_columns_stress.issubset(data_columns):
+            transformed = data[['start_date', 'value', 'deviation', 'stress_state']].rename(
+                columns={
+                    'start_date': 'startDate',
+                    'value': 'value',
+                    'deviation': 'deviation',
+                    'stress_state': 'stressState'
+                }
+            ).to_dict(orient="records")
+            return transformed
+        else:
+            raise TypeError(
+                "no valid columns where found for data modification"
+            )
+            
+    raise TypeError(
+        "unsupported data type"
+    )
+    
 @app.get("/heart_rate")
 def get_heart_data_query(
     start_date: datetime = Query(None, description="Start date"),
@@ -86,10 +93,17 @@ def get_heart_data_query(
             records_number = 1
 
         filtered_heart_data = heart_data[::records_number][['start_date', 'end_date', 'value']]
-        transformed_data = transform_data(filtered_heart_data)
+        transformed_data = modify_response_data(filtered_heart_data)
         avg_heart_data = calclulate_avg_heart_rate(filtered_heart_data)
         
         return {"heart_data": transformed_data, "avg_heart_rate": avg_heart_data}
+    
+    except TypeError as te:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Type error: {str(te)}"
+        )
+        
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -130,9 +144,8 @@ def get_stress_data(
             records_number = 1
 
         stress_levels = stress_levels[::records_number]
-        print(stress_levels.head())
         
-        stress_data = transform_stress_data(stress_levels[['start_date', 'value', 'deviation', 'stress_state']])
+        stress_data = modify_response_data(stress_levels[['start_date', 'value', 'deviation', 'stress_state']])
         
         return {"stress_data": stress_data}
     except Exception as e:
