@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, HTTPException, Query
-from backend.data_reader import get_hrv, parse_data, get_heart_data
+from backend.data_reader import parse_data, get_heart_data
 from backend.heart_rate import calclulate_avg_heart_rate, calculate_physical_stamina, calculate_stress_level, filter_data_by_period
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
@@ -15,7 +15,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    
 )
 
 health_data = parse_data("backend/export.xml")
@@ -89,7 +88,6 @@ def get_heart_data_query(
     start_date: datetime = Query(None, description="Start date"),
     end_date: datetime = Query(None, description="End date")
 ):
-    
     try:
         heart_data = get_heart_data(health_data)
         
@@ -98,13 +96,8 @@ def get_heart_data_query(
             heart_data = filter_data_by_period(start_date, end_date, heart_data)
         
         data_size = heart_data.shape[0]
-        print("HEART", data_size)
-
         records_number = calculate_records_number(data_size)
-        print("HEART", records_number)
         
-        print(len(heart_data[::records_number]))
-
         filtered_heart_data = heart_data[::records_number][['start_date', 'end_date', 'value']]
         transformed_data = modify_response_data(filtered_heart_data)
         avg_heart_data = calclulate_avg_heart_rate(filtered_heart_data)

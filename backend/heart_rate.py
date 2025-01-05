@@ -26,11 +26,8 @@ def calculate_stress_level(health_data, age=20):
     heart_data = get_heart_data(health_data)
     
     hrv_data = get_hrv(health_data)
-    print(hrv_data)
     hrv_norm = get_hrv_age_norm(age)
-    print(hrv_norm)
     rhr = get_rhr_baseline(heart_data)
-    print(rhr)
     
     if 'value' not in heart_data.columns:
         raise ValueError("Missing 'value' column in the input data.")
