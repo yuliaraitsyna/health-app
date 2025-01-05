@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, HTTPException, Query
-from backend.data_reader import parse_data, get_heart_data
-from backend.heart_rate import calclulate_avg_heart_rate, calculate_stress_level, filter_heart_data_by_period
+from backend.data_reader import get_hrv, parse_data, get_heart_data
+from backend.heart_rate import calclulate_avg_heart_rate, calculate_physical_stamina, calculate_stress_level, filter_heart_data_by_period
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 
@@ -48,8 +48,6 @@ def modify_response_data(data):
         data = pd.DataFrame(data)
         
     data_columns = data.columns
-    
-    print(data_columns)
     
     if isinstance(data, pd.DataFrame):
         required_columns_heart = {'start_date', 'end_date', 'value'}
@@ -98,9 +96,7 @@ def get_heart_data_query(
             heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
         
         data_size = heart_data.shape[0]
-        print(data_size)
         records_number = calculate_records_number(data_size)
-        print(records_number)
 
         filtered_heart_data = heart_data[::records_number][['start_date', 'end_date', 'value']]
         transformed_data = modify_response_data(filtered_heart_data)
@@ -125,13 +121,6 @@ def get_stress_data(
     start_date: datetime = Query(None, description="Start date"),
     end_date: datetime = Query(None, description="End date")
 ):
-
-    if start_date and end_date and start_date > end_date:
-        raise HTTPException(
-            status_code=400,
-            detail="End date can't be earlier than start date"
-        )
-
     try:
         heart_data = get_heart_data(health_data)
         
@@ -160,3 +149,36 @@ def get_stress_data(
             status_code=500,
             detail=f"Error occurred: {str(e)}"
         )
+
+@app.get("/heart_rate/stamina")
+def get_stamina_data(
+    start_date: datetime = Query(None, description="Start date"),
+    end_date: datetime = Query(None, description="End date")
+):
+    try:
+        heart_data = get_heart_data(health_data)
+        
+        if start_date and end_date:
+            start_date, end_date = validate_and_adjust_dates(start_date, end_date)
+            heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
+            
+        stamina_data = calculate_physical_stamina(health_data)
+        
+        if stamina_data is None:
+            raise ValueError(
+                "no stamina data was got"
+            )
+            
+        return {"physical_stamina": stamina_data}
+    
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Error occured: {str(ve)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error occured: {str(e)}"
+        )
+    

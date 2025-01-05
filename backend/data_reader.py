@@ -39,13 +39,14 @@ def get_heart_data(data):
     heart_data = df[df['type'] == 'HKQuantityTypeIdentifierHeartRate']
     return heart_data
 
-
 def get_hrv(data):
     df = pd.DataFrame(data)
 
     hrv_data = df[df['type'] == 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN']
 
-    print(hrv_data)
+    if hrv_data.empty:
+        return None
+    
     return hrv_data['value'].astype(float).mean()
 
 def get_rhr_current(heart_data):
@@ -55,7 +56,12 @@ def get_rhr_current(heart_data):
     return latest_heart_rate['value']
 
 def get_rhr_baseline(heart_data):
+    if heart_data.empty:
+        return None
+
+    heart_data['value'] = pd.to_numeric(heart_data['value'], errors='coerce')
     resting_data = heart_data[heart_data['value'] < 80]
+
     return resting_data['value'].mean() if not resting_data.empty else None
 
 def get_hr_max(age):
