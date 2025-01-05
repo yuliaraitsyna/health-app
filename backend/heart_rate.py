@@ -22,15 +22,33 @@ def determine_stress_state(score):
     else:
         return "Perfect"
 
-def calculate_stress_level(df, rhr):
-    if 'value' not in df.columns:
+def calculate_stress_level(health_data, age=20):
+    heart_data = get_heart_data(health_data)
+    
+    hrv_data = get_hrv(health_data)
+    print(hrv_data)
+    hrv_norm = get_hrv_age_norm(age)
+    print(hrv_norm)
+    rhr = get_rhr_baseline(heart_data)
+    print(rhr)
+    
+    if 'value' not in heart_data.columns:
         raise ValueError("Missing 'value' column in the input data.")
     
-    df['value'] = df['value'].astype(float)
+    heart_data['value'] = heart_data['value'].astype(float)
+
+    hrv_deviation = (hrv_data / hrv_norm) * 100
     
-    df['deviation'] = (abs(df['value'] - rhr) / rhr) * 100
-    df['stress_state'] = df['deviation'].apply(determine_stress_state)
-    return df
+    heart_data['deviation'] = (abs(heart_data['value'] - rhr) / rhr) * 100
+    heart_data['stress_state'] = heart_data['deviation'].apply(determine_stress_state)
+    
+    combined_stress = heart_data['deviation'] * 0.5 + hrv_deviation * 0.5
+    combined_stress_level = combined_stress.apply(determine_stress_state)
+    
+    heart_data['combined_stress'] = combined_stress
+    heart_data['combined_stress_state'] = combined_stress_level
+
+    return heart_data
 
 def get_hrv_age_norm(age):
     if age < 18:

@@ -49,9 +49,11 @@ def modify_response_data(data):
         
     data_columns = data.columns
     
+    print(data_columns)
+    
     if isinstance(data, pd.DataFrame):
         required_columns_heart = {'start_date', 'end_date', 'value'}
-        required_columns_stress = {'start_date', 'value', 'deviation', 'stress_state'}
+        required_columns_stress = {'start_date', 'value', 'deviation', 'stress_state', 'combined_stress', 'combined_stress_state'}
     
         if required_columns_heart.issubset(data_columns):
             transformed = data[['start_date', 'end_date', 'value']].rename(
@@ -64,12 +66,14 @@ def modify_response_data(data):
             return transformed
         
         elif required_columns_stress.issubset(data_columns):
-            transformed = data[['start_date', 'value', 'deviation', 'stress_state']].rename(
+            transformed = data[['start_date', 'value', 'deviation', 'stress_state', 'combined_stress', 'combined_stress_state']].rename(
                 columns={
                     'start_date': 'startDate',
                     'value': 'value',
                     'deviation': 'deviation',
-                    'stress_state': 'stressState'
+                    'stress_state': 'stressState',
+                    'combined_stress': 'combinedStressDeviation',
+                    'combined_stress_state': 'combinedStressState'
                 }
             ).to_dict(orient="records")
             return transformed
@@ -128,16 +132,15 @@ def get_stress_data(
             start_date, end_date = validate_and_adjust_dates(start_date, end_date)
             heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
 
-        avg_heart_rate = calclulate_avg_heart_rate(heart_data)
-        stress_levels = calculate_stress_level(heart_data, avg_heart_rate)
+        stress_levels = calculate_stress_level(health_data)
         
         data_size = heart_data.shape[0]
         records_number = calculate_records_number(data_size)
 
         stress_levels = stress_levels[::records_number]
         
-        stress_data = modify_response_data(stress_levels[['start_date', 'value', 'deviation', 'stress_state']])
-        
+        stress_data = modify_response_data(stress_levels[['start_date', 'value', 'deviation', 'stress_state', 'combined_stress', 'combined_stress_state']])
+
         return {"stress_data": stress_data}
     except TypeError as te:
         raise HTTPException(
