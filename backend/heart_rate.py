@@ -3,7 +3,7 @@ import pandas as pd
 
 from backend.data_reader import get_heart_data, get_hr_1min, get_hr_max, get_hrv, get_rhr_baseline, get_rhr_current
 
-def filter_heart_data_by_period(start_date: datetime, end_date: datetime, rates):
+def filter_data_by_period(start_date: datetime, end_date: datetime, rates):
     df = pd.DataFrame(rates)
     return df[(df['start_date'] >= start_date) & (df['end_date'] <= end_date)]
 

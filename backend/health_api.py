@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from fastapi import FastAPI, HTTPException, Query
 from backend.data_reader import get_hrv, parse_data, get_heart_data
-from backend.heart_rate import calclulate_avg_heart_rate, calculate_physical_stamina, calculate_stress_level, filter_heart_data_by_period
+from backend.heart_rate import calclulate_avg_heart_rate, calculate_physical_stamina, calculate_stress_level, filter_data_by_period
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 
@@ -33,14 +33,14 @@ def validate_and_adjust_dates(start_date, end_date):
     return start_date, end_date
 
 def calculate_records_number(data_size):
-    if data_size <= 1000:
+    max_returned_records = 150
+    min_returned_records = 50
+    
+    if data_size <= min_returned_records:
         return 1
-    elif data_size <= 10000:
-        return max(1, data_size // 1000)  
-    elif data_size <= 50000:
-        return max(100, data_size // 200)
     else:
-        return max(500, data_size // 100)
+        step = max(data_size // max_returned_records, 1)
+        return step
 
 
 def modify_response_data(data):
@@ -48,8 +48,6 @@ def modify_response_data(data):
         data = pd.DataFrame(data)
         
     data_columns = data.columns
-    
-    print(data_columns)
     
     if isinstance(data, pd.DataFrame):
         required_columns_heart = {'start_date', 'end_date', 'value'}
@@ -97,10 +95,15 @@ def get_heart_data_query(
         
         if start_date and end_date:
             start_date, end_date = validate_and_adjust_dates(start_date, end_date)
-            heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
+            heart_data = filter_data_by_period(start_date, end_date, heart_data)
         
         data_size = heart_data.shape[0]
+        print("HEART", data_size)
+
         records_number = calculate_records_number(data_size)
+        print("HEART", records_number)
+        
+        print(len(heart_data[::records_number]))
 
         filtered_heart_data = heart_data[::records_number][['start_date', 'end_date', 'value']]
         transformed_data = modify_response_data(filtered_heart_data)
@@ -127,19 +130,20 @@ def get_stress_data(
 ):
     try:
         heart_data = get_heart_data(health_data)
+        filtered_health_data = health_data
         
         if start_date and end_date:
             start_date, end_date = validate_and_adjust_dates(start_date, end_date)
-            heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
+            heart_data = filter_data_by_period(start_date, end_date, heart_data)
+            filtered_health_data = filter_data_by_period(start_date, end_date, health_data)
 
-        stress_levels = calculate_stress_level(health_data)
+        stress_levels = calculate_stress_level(filtered_health_data)
         
         data_size = heart_data.shape[0]
         records_number = calculate_records_number(data_size)
 
-        stress_levels = stress_levels[::records_number]
-        
-        stress_data = modify_response_data(stress_levels[['start_date', 'value', 'deviation', 'stress_state', 'combined_stress', 'combined_stress_state']])
+        filtered_stress_data = stress_levels[::records_number][['start_date', 'value', 'deviation', 'stress_state', 'combined_stress', 'combined_stress_state']]
+        stress_data = modify_response_data(filtered_stress_data)
 
         return {"stress_data": stress_data}
     except TypeError as te:
@@ -163,7 +167,7 @@ def get_stamina_data(
         
         if start_date and end_date:
             start_date, end_date = validate_and_adjust_dates(start_date, end_date)
-            heart_data = filter_heart_data_by_period(start_date, end_date, heart_data)
+            heart_data = filter_data_by_period(start_date, end_date, heart_data)
             
         stamina_data = calculate_physical_stamina(health_data)
         

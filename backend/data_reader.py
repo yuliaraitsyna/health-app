@@ -1,3 +1,4 @@
+from datetime import datetime
 import xml.etree.ElementTree as ET
 import pandas as pd
 
@@ -12,23 +13,23 @@ def parse_data(file_path):
         end_date = record.get('endDate')
         value = record.get('value')
 
-        if record_type == 'HKQuantityTypeIdentifierHeartRate':
+        if record_type in ('HKQuantityTypeIdentifierHeartRate', 
+                           'HKQuantityTypeIdentifierHeartRateVariabilitySDNN'):
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S %z')
+                end_date = datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S %z')
+            except ValueError as e:
+                raise ValueError(f"Date parsing error: {e}")
+
             data.append({
                 'type': record_type,
                 'start_date': start_date,
                 'end_date': end_date,
-                'value': value
+                'value': float(value) if value is not None else None
             })
 
-        elif record_type == 'HKQuantityTypeIdentifierHeartRateVariabilitySDNN':
-            data.append({
-                'type': record_type,
-                'start_date': start_date,
-                'end_date': end_date,
-                'value': value
-            })
-
-    return data
+    df = pd.DataFrame(data)
+    return df
 
 def get_heart_data(data):
     df = pd.DataFrame(data)

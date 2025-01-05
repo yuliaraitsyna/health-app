@@ -64,8 +64,8 @@ const HeartRatePage = () => {
                 headers: {
                   'Content-Type': 'application/json',
                 },
-                mode: 'cors',  // Ensure CORS mode is enabled
-                credentials: 'include', // If using cookies for auth
+                mode: 'cors',
+                credentials: 'include',
               });
 
             if (!response.ok) {
