@@ -1,19 +1,21 @@
 import { useCallback, useDeferredValue, useEffect, useState } from "react";
 import { Typography } from "@mui/material";
 import { HRChart } from "./Charts/HRChart/HRChart";
-import { HeartData, StressData } from "../HeartData/HeartData";
+import { HeartData, StaminaData, StressData } from "../HeartData/HeartData";
 import { DatePickerComponent } from "../DatePicker/DatePicker";
 import { Period } from "../DatePicker/Period";
 import { AvgHeartRate } from "./AvgHeartRate/AvgHeartRate";
 
 import styles from './HeartRatePage.module.css'
 import { StressChart, StressStateChart } from "./Charts/StressChart/StressChart";
+import { StaminaRate } from "./StaminaRate/StaminaRate";
 
 const LOCAL_STORAGE_KEY = "selectedPeriod";
 
 enum FetchType {
     HEART = '/heart_rate',
-    STRESS = '/heart_rate/stress'
+    STRESS = '/heart_rate/stress',
+    STAMINA = '/heart_rate/stamina'
 }
 
 const HeartRatePage = () => {
@@ -24,6 +26,7 @@ const HeartRatePage = () => {
     const deferredStressData = useDeferredValue(stressData);
     const [period, setPeriod] = useState<Period>({ startDate: null, endDate: null });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [staminaData, setStaminaData] = useState<StaminaData | null>(null)
 
     useEffect(() => {
         const storedPeriod = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -36,6 +39,8 @@ const HeartRatePage = () => {
             fetchData(FetchType.HEART);
             fetchData(FetchType.STRESS);
         }
+        
+        fetchData(FetchType.STAMINA);
     }, []);
 
     useEffect(() => {
@@ -100,6 +105,14 @@ const HeartRatePage = () => {
                     }));
                     setStressData(formattedStressData);
                 }
+            } else if (fetchType === FetchType.STAMINA) {
+                if (data && Array.isArray(data.physical_stamina)) {
+                    const formattedData: StaminaData = {
+                        value: data.physical_stamina[0],
+                        state: data.physical_stamina[1]
+                    };
+                    setStaminaData(formattedData);
+                }
             }
         } catch (error) {
             setErrorMessage("An error occurred while fetching data. Please, try again.");
@@ -111,6 +124,7 @@ const HeartRatePage = () => {
         <div className={styles['page']}>
             <Typography variant="h3" m={"10px"}>Heart rate data</Typography>
             <AvgHeartRate heartRate={avgHR}></AvgHeartRate>
+            <StaminaRate value={staminaData?.value} state={staminaData?.state}></StaminaRate>
             {errorMessage ? <Typography variant="body1" color="red">{errorMessage}</Typography> : null}
             <DatePickerComponent onDateSent={handleDateSent} initialPeriod={period} />
             <HRChart data={deferredValue} />

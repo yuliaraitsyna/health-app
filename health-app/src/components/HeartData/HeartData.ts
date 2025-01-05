@@ -8,3 +8,8 @@ export interface StressData extends HeartData {
     deviation: number
     stressState: string
 }
+
+export interface StaminaData {
+    value: number,
+    state: string
+}
