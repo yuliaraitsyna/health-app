@@ -1,14 +1,14 @@
 import { useCallback, useDeferredValue, useEffect, useState } from "react";
 import { Typography } from "@mui/material";
-import { HRChart } from "./Charts/HRChart/HRChart";
 import { HeartData, StaminaData, StressData } from "../HeartData/HeartData";
 import { DatePickerComponent } from "../DatePicker/DatePicker";
 import { Period } from "../DatePicker/Period";
 import { AvgHeartRate } from "./AvgHeartRate/AvgHeartRate";
+import { StaminaRate } from "./StaminaRate/StaminaRate";
+import { ChartCanvas } from "./Charts/ChartCanvas/ChartCanvas";
+import { ChartVariant } from "./Charts/ChartCanvas/types/types";
 
 import styles from './HeartRatePage.module.css'
-import { StressChart, StressStateChart } from "./Charts/StressChart/StressChart";
-import { StaminaRate } from "./StaminaRate/StaminaRate";
 
 const LOCAL_STORAGE_KEY = "selectedPeriod";
 
@@ -17,6 +17,14 @@ enum FetchType {
     STRESS = '/heart_rate/stress',
     STAMINA = '/heart_rate/stamina'
 }
+
+const colors = [
+    'rgba(255, 99, 132, 0.6)',
+    'rgba(255, 159, 64, 0.6)',
+    'rgba(255, 205, 86, 0.6)',
+    'rgba(75, 192, 192, 0.6)',
+    'rgba(54, 162, 235, 0.6)',
+];
 
 const HeartRatePage = () => {
     const [heartData, setHeartData] = useState<HeartData[]>([]);
@@ -39,7 +47,7 @@ const HeartRatePage = () => {
             fetchData(FetchType.HEART);
             fetchData(FetchType.STRESS);
         }
-        
+
         fetchData(FetchType.STAMINA);
     }, []);
 
@@ -127,9 +135,9 @@ const HeartRatePage = () => {
             <StaminaRate value={staminaData?.value} state={staminaData?.state}></StaminaRate>
             {errorMessage ? <Typography variant="body1" color="red">{errorMessage}</Typography> : null}
             <DatePickerComponent onDateSent={handleDateSent} initialPeriod={period} />
-            <HRChart data={deferredValue} />
-            <StressChart data={deferredStressData}/>
-            <StressStateChart data={deferredStressData}/>
+            <ChartCanvas data={deferredValue} chartType="line" chartVariant={ChartVariant.HEART_CHART}/>
+            <ChartCanvas data={deferredStressData} chartType="bar" chartVariant={ChartVariant.STRESS_LEVELS_CHART} colors={colors}/>
+            <ChartCanvas data={deferredStressData} chartType="bar" chartVariant={ChartVariant.STRESS_DEVIATION_CHART}/>
         </div>
     );
 };
