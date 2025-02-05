@@ -1,5 +1,8 @@
 # Health App
 
+### Warning
+This application only provides .xml format imported from Health application.
+
 ## Description
 This app analyses health data such as heart rate gathered from apple watch. Can also be used with certificated Health Kit via Apple Developer permission.
 
